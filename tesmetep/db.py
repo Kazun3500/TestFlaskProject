@@ -1,7 +1,8 @@
-from datetime import datetime
+import datetime
 import click
 from flask.cli import with_appcontext
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime
+from sqlalchemy.orm import relationship, backref
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -17,12 +18,35 @@ def init_db_command():
     click.echo('Initialized the database.')
 
 
-class User(db.Model):
+class Users(db.Model):
     id = Column(Integer, primary_key=True)
     username = Column(String(80), unique=True, nullable=False)
     email = Column(String(120), unique=True, nullable=False)
     password = Column(String(120), nullable=False)
-    dt_created = Column(DateTime, default=datetime.now())
+    dt_created = Column(DateTime, default=datetime.datetime.now())
 
-    def __repr__(self):
-        return '<User %r>' % self.username
+
+class Departments(db.Model):
+    id = Column(Integer, primary_key=True)
+    name = Column(String(120), unique=True, nullable=False)
+    dt_created = Column(DateTime, default=datetime.datetime.now())
+    parent_id = Column(Integer, ForeignKey('Departments.id'), nullable=True)
+    director_id = ForeignKey('Users.id')
+
+    chils_departments = relationship('Departments', cascade='all',
+        backref=backref('parent_department', remote_side='Departments.id', lazy='joined'), 
+        lazy='dynamic')
+    director = relationship('Users', lazy='joined')
+
+
+class Roles(db.Model):
+    id = Column(Integer, primary_key=True)
+    name = Column(String(120), nullable=False)
+
+
+class UserRoles(db.Model):
+    id = Column(Integer, primary_key=True)
+    role_id = ForeignKey('Roles.id')
+    user_id = ForeignKey('Users.id')
+    dts = Column(DateTime, default=datetime.datetime.now())
+    dte = Column(DateTime, nullable=True)
